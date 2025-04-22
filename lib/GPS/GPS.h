@@ -7,7 +7,7 @@
 class GPS
 {
 public:
-    GPS(HardwareSerial& gpsUart);       // Constructor
+    GPS(uint8_t adr=0x10u, uint8_t sclp = 0x16u, uint8_t sdap = 0x15u);       // Constructor
     ~GPS();                             // Destructor
 
     bool isLatched();                   // Check if connected to a satellite
@@ -21,7 +21,7 @@ public:
     float getLatitude() const;          // In degrees
     float getLongitude() const;         // in degrees
     PSA::Position getLoc() const;       // In degrees
-
+    
 private:
     Adafruit_GPS myGPS;                 // GPS object that contains all the info from last readout
 };

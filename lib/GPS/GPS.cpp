@@ -4,13 +4,12 @@
 // Set to 'true' if you want to debug and listen to the raw GPS sentences
 #define GPSECHO false
 
-/// @brief Constructor
-/// @param gpsUart Reference to hardware serial used (Need to set pins before)
-GPS::GPS(HardwareSerial& gpsUart)  :
-    myGPS(&gpsUart)
+
+GPS::GPS(uint8_t adr, uint8_t sclp, uint8_t sdap)  :
+    myGPS(&Wire)
 {
     // 9600 baud is the default rate for the Ultimate GPS
-    myGPS.begin(9600);
+    myGPS.begin(0x10);
 
     myGPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
     // uncomment this line to turn on only the "minimum recommended" data
@@ -43,6 +42,8 @@ bool GPS::isLatched()
 /// @return True if reading operation was successfull
 bool GPS::read()
 {
+    if(!myGPS.fix){return false;}
+
     // Manque ptetre logique de multiple read
     // read data from the GPS
     char c = myGPS.read();
@@ -53,7 +54,7 @@ bool GPS::read()
     // if a sentence is received, we can check the checksum, parse it...
     if (myGPS.newNMEAreceived()) 
     {
-        Serial.print(myGPS.lastNMEA());
+        //Serial.print(myGPS.lastNMEA());
         // Check if able to parse
         return (!myGPS.parse(myGPS.lastNMEA()) ? false : true);
     }
@@ -80,17 +81,21 @@ PSA::Time GPS::getTime() const
 }
 
 /// @brief Gets latitude from satellite
-/// @return Latitude in degrees
+/// @return Latitude in degrees (positive East)
 float GPS::getLatitude() const
 {
-    return static_cast<double>(myGPS.latitudeDegrees);
+    double pos{static_cast<double>((myGPS.lat == 'N')?myGPS.latitudeDegrees:(-1*myGPS.latitudeDegrees))};
+    Serial.println(" latitude: "); Serial.print(pos,6);
+    return pos;
 }
 
 /// @brief Gets longitude from satellite
 /// @return Longitude in degrees
 float GPS::getLongitude() const
 {
-    return static_cast<double>(myGPS.longitudeDegrees);
+    double pos{static_cast<double>((myGPS.lon == 'E')?myGPS.longitudeDegrees:(-1*myGPS.longitudeDegrees))};
+    Serial.println(" longitude: "); Serial.print(pos,6);
+    return pos;
 }
 
 /// @brief Gets latitude and longitude from stallite

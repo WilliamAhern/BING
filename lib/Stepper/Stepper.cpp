@@ -27,6 +27,7 @@ void Stepper::stepperSetup()
     // Setup Stepper ========================
     stepper.setMaxSpeed(MAXSPEED);
     stepper.setAcceleration(ACCEL);
+    Serial.println("init complete");
 }
 
 uint8_t Stepper::getDirPin() const
@@ -47,11 +48,13 @@ AccelStepper &Stepper::accelStepper()
 void Stepper::sleep()
 {
     digitalWrite(sleepPin, HIGH);
+    delay(10);
 }
 
 void Stepper::wake()
 {
     digitalWrite(sleepPin, LOW);
+    delay(10);
 }
 
 bool Stepper::isSleep()
@@ -61,18 +64,26 @@ bool Stepper::isSleep()
 
 void Stepper::step(int steps, int speed)
 {
+    int polarizedSpeed = steps<0?-abs(speed):speed;
+    int polarizedSteps = limitSteps(speed<0?-abs(steps):steps);
+    Serial.print("Speed, Steps: "); Serial.print(polarizedSpeed); Serial.print(",  "); Serial.println(polarizedSteps);
+
     if(isSleep()) { wake();}
 
-    stepper.setCurrentPosition(0);
-    stepper.setSpeed(speed);
-    stepper.moveTo(steps);
-    stepper.run();
-
-    while(stepper.run())
-    {
-        delay(1);
-    }
+    Serial.print("Setting to zero motor, current position: ");
+    Serial.println(stepper.currentPosition());
     
+    stepper.setCurrentPosition(0);
+    
+    while(abs(stepper.currentPosition())<abs(polarizedSteps))
+    {
+        stepper.setSpeed(polarizedSpeed);
+        stepper.moveTo(polarizedSteps);
+        stepper.run();
+    }
+    Serial.print("Done, current position: ");
+    Serial.println(stepper.currentPosition());
+    delay(10);
     sleep();
 }
 
@@ -83,10 +94,16 @@ void Stepper::step(int steps)
 
 void Stepper::angle(float ang, int speed)
 {
-    step((ang*gearRatio/STEPSIZE),speed);
+    step(ang*gearRatio/STEPSIZE,speed);
 }
 
 void Stepper::angle(float ang)
 {
     angle(ang, MAXSPEED);
+}
+
+int Stepper::limitSteps(int steps)
+{
+    int max{(int)floor(360*gearRatio/STEPSIZE)};
+    return (steps<(-max) || steps>max ? 0 : steps);
 }

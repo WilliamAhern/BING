@@ -1,7 +1,7 @@
 #include <AccelStepper.h>
 
 #define motorInterfaceType 1
-#define MAXSPEED 1500
+#define MAXSPEED 1000
 #define ACCEL 300
 #define STEPSIZE 1.8
 
@@ -38,4 +38,5 @@ private:
     void sleep();
     void wake();
     bool isSleep();
+    int limitSteps(int steps);
 };

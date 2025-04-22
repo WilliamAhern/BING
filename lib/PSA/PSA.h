@@ -1,6 +1,15 @@
 #include <AccelStepper.h>
-
+#include <cstring>
+#include <cstdlib>
+#include <SPIFFS.h>
+#include <FS.h>
+extern "C" {
+  #include "GeomagnetismHeader.h"
+  #include "magcalc.h"
+}
 class GPS;  // Forward declaration
+
+const uint16_t CUMULDAYS[14] = {0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
 
 class PSA
 {
@@ -47,6 +56,10 @@ PSA(void);
 // Getters
 DateTime getDateTime() const;
 Position getPosition() const;
+double getAzimut() const;
+double getAltitude() const;
+std::pair<double, double> getAngles() const;
+double getDeclination() const;
 
 void setDateTime(DateTime dt);
 void setPosition(Position position);
@@ -56,6 +69,7 @@ void setAll(DateTime dt, Position position);
 
 void updateSolarAngle();
 void updateSolarAngle(Time time);
+void updateSolarAngle(float timeElapsed);
 
 // Add update solar angle from gps object
 
@@ -80,8 +94,11 @@ double julianDay;
 Position pos;
 SolarAngle results;
 
-double dtToJulianDay(DateTime dt);
+std::pair<double, double> dtToJulianDay(DateTime dt);
 
 void setTime(Time time);
 void setDate(Date date);
+double decimalHours() const;
+double decimalYear() const;
+bool isLeapYear(int year) const;
 };
