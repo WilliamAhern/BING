@@ -66,19 +66,7 @@ void setup()
 
 void loop()
 {
-  MenuManager menumanager{};
-  menumanager.initLCD();
-
-  motorTest(1,10);
-  motorTest(1,-10);
-  motorTest(2,-30);
-  motorTest(2,30);
-  while(1)
-  {
-    menumanager.encoderManager();
-  }
-  stop();
-  //showMode();
+  
 }
 
 void showMode()
@@ -261,6 +249,20 @@ void normalMode()
   stepper1.angle(180);
   stepper1.angle(-180);
 
+  // Elevation axis calibration -------------------------------------------------------
+  do{
+    imu.setReadingMode(IMU::READING_T::GRAVITY);
+  while(!imu.readData()){delay(100);}
+  angleToFlat += imu.getGravityAngle();
+
+  // move motors to obtain position parallel to ground and aligned with true north
+  Serial.print("Angle to flat: "); Serial.print(angleToFlat,3);
+  stepper2.angle(-angleToFlat);
+
+  imu.readData();
+  } while ((abs(imu.getGravityAngle()) > AZIMUT_ANGLE_TOL) || DEBUG);
+  // ---------------------------------------------------------------------------------
+
   // Azimut axis calibration -------------------------------------------------------
   do{
   imu.setReadingMode(IMU::READING_T::MAG);
@@ -276,24 +278,7 @@ void normalMode()
   } while ((abs(imu.getMagneticNorthAngle()) > AZIMUT_ANGLE_TOL ) || DEBUG);
   // ---------------------------------------------------------------------------------
 
-  // Elevation axis calibration -------------------------------------------------------
-  do{
-    imu.setReadingMode(IMU::READING_T::GRAVITY);
-  while(!imu.readData()){delay(100);}
-  angleToFlat += imu.getGravityAngle();
-
-  // move motors to obtain position parallel to ground and aligned with true north
-  Serial.print("Angle to flat: "); Serial.print(angleToFlat,3);
-  stepper2.angle(-angleToFlat);
-
-  imu.readData();
-  } while ((abs(imu.getGravityAngle()) > AZIMUT_ANGLE_TOL) || DEBUG);
-  // ---------------------------------------------------------------------------------
-
   // Read and init psa object to calculate angles
-  #if defined(SHOWTIME)
-  psaObject.setAll({{2025, 4, 12}, {13, 20, 5.4}}, {45.493611, -73.5625});
-  #elif
   // Wait for GPS to latch
   Serial.println("Waiting on GPS siganl");
   while(!myGPS.isLatched()){ delay(1000);}
@@ -301,7 +286,6 @@ void normalMode()
 
   myGPS.read();
   psaObject.setAll(myGPS.getDateTime(), myGPS.getLoc());
-  #endif
 
   // calculate solar angles
   psaObject.updateSolarAngle();
